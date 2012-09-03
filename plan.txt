@@ -1,0 +1,65 @@
+Step 1
+The program will be implemented in Java.
+It use RMI to control, reason: new experience, easier to develop.
+socket to publish other information. 1 socket for each players.
+Simple display : may be a text-area with different symbols.
+Suppose limit : N < 20, M < 0.5*N^2, number of players <= 8
+Before each move, need global source to verify that the cell isn¡¯t occupied.
+Verify end only when a treasure is toked.
+Server start with command line and N,M as arguments.
+A single game runs at a time.
+Client has function 
+connect(clientName): return a player ID, game parameter(N.M)
+disconnect(clientName). 
+All the information (Ex : Name-ID map) is stored is server side. Client only has his own information.
+
+Server has attributs:
+	N
+	M
+	players information map
+	game stat (created, started or ended[default])
+	list of player in games
+		player (a class):
+		X, Y
+		number of treasures
+	list of treasure availables
+		treasure (a class):
+		X, Y
+number og treasures	
+function update_map
+map : a string to stored all the game information, it will be return to the client.
+	function publish_map
+
+Game control function in RMI
+	function joinGame(playerID)
+	function move(playerID,direction)
+		return the map(location of players...)
+	function show() : return the map. use by client every seconde if he didn¡¯t move.
+
+Client side decode the map and display.
+
+Server use 2 Lock to ensure the mutual exclusion :
+	lock 1 when check and move
+	lock 1,2 when update the map.
+	lock 2 when read the map
+
+scenario
+
+Start Server
+User connects, create new thread content socket send only
+User create a game
+set game stat to created
+User join
+20s end, game start, socket publish ¡°Start¡±
+set game stat to started
+player move, using RMI, server handle it, update map and publish it in the end.
+If a treasure is toked, verify end.
+If end, publish ¡°End¡±.
+Set game stat to ended.
+
+
+
+
+
+Step 2
+TBD
