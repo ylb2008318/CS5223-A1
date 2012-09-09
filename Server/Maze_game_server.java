@@ -41,6 +41,17 @@ public class Maze_game_server {
         return false;
     }
     
+    public boolean end_server() {
+        try {
+            registry.unbind(registryURL);
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Server exception: " + e.toString());
+	}
+        return false;
+    }
+    
     public static void main(String[] args) {
         //Maze_game_server server = new Maze_game_server(args[0],Integer.parseInt(args[1]));
         Maze_game_server server = new Maze_game_server("localhost",5896);

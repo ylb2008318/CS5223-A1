@@ -1,15 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package maze_game_client;
-
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import maze_game_server.Server_interface;
 
 /**
  *
@@ -25,7 +18,9 @@ public class Maze_game_client implement Client_interface {
     private int size;
     private Client_interface client_interface;
     
-    public Maze_game_client() {
+    public Maze_game_client(String name, int port) {
+	   serverName = name;
+	   serverPort = port;
         registryURL = "rmi://"+this.serverName+":"+Integer.toString(this.serverPort)+"/game_control";
         playerID = -1;
     }
@@ -75,9 +70,8 @@ public class Maze_game_client implement Client_interface {
     }
 
 
-
-
    public static void main (String[] args){
+	Maze_game_client client = new Maze_game_client("Serveur1",1024);
 	System.out.println("Player Interface:");
 	while(1) {
 		System.out.println("Select an option:");
@@ -96,13 +90,12 @@ public class Maze_game_client implement Client_interface {
    
 	switch (x)
 	{
-		case 1: connect_server(); break;
+		case 1: client.connect_server(); break;
 		case 2: break;
 		case 3: break;
-		case 4: if (disconnect_server()) System.out.println("Disconnected...");
+		case 4: if (client.disconnect_server()) System.out.println("Disconnected...");
 			   else System.out.println("The disconnection has failed");
 			   break;
 		default: 
 	}
-
 }
