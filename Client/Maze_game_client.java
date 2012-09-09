@@ -3,12 +3,13 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Scanner;
 
 /**
  *
  * @author ghome
  */
-public class Maze_game_client implement Client_interface {
+public class Maze_game_client implements Client_interface {
     private String serverName;
     private int serverPort;
     private String registryURL;
@@ -25,23 +26,23 @@ public class Maze_game_client implement Client_interface {
         playerID = -1;
     }
 
-    public Void display(Map_obj[][] game_map) {
+    public void display(Map_obj[][] game_map) {
         int i,j;
 		for (i=0;i<size;i++){
 			for(j=0;j<size;j++){
-				if (instanceof(game_map[i][j])==Game_player) System.out.print("P  ");
-				else if (instanceof(game_map[i][j])==Treasure) System.out.print("T  ");
+				if (game_map[i][j] instanceof Game_player) System.out.print("P  ");
+				else if (game_map[i][j] instanceof Treasure) System.out.print("T  ");
 				else System.out.print("O  ");
 			}
 			System.out.print("\n");
 		}
     }
     
-    public Void setPlayerID(int ID) {
+    public void setPlayerID(int ID) {
 	playerID=ID;
     }
 
-    public Void setSize(int size) {
+    public void setSize(int size) {
 	this.size=size;
     }
 
@@ -49,8 +50,7 @@ public class Maze_game_client implement Client_interface {
 	try {
 	    registry = LocateRegistry.getRegistry();
 	    server_stub = (Server_interface) registry.lookup(registryURL);
-	    client_interface = new Client_impl();
-         playerID = server_stub.connectServer(client_interface);
+         playerID = server_stub.connectServer(this);
 	    System.out.println("OK");
 	} catch (Exception e) {
 	    System.err.println("Client exception: " + e.toString());
@@ -73,29 +73,32 @@ public class Maze_game_client implement Client_interface {
    public static void main (String[] args){
 	Maze_game_client client = new Maze_game_client("Serveur1",1024);
 	System.out.println("Player Interface:");
-	while(1) {
+	while(true) {
 		System.out.println("Select an option:");
 		System.out.println("1: Connect to the server");
 		System.out.println("2: Join game");
 		System.out.println("3: Move");
 		System.out.println("4: Disconnect to the server");
 
-	Scanner sc = new Scanner(System.in);
-	int x=-0;
-	x = sc.nextInt();
-	while (x!=1 || x!=2 || x!=3 || x!=4){
-		System.out.println("wrong value, try again.");
+		Scanner sc = new Scanner(System.in);
+		int x=-0;
 		x = sc.nextInt();
+		while (x!=1 || x!=2 || x!=3 || x!=4){
+			System.out.println("wrong value, try again.");
+			x = sc.nextInt();
+		}
+	
+		switch (x)
+		{
+			case 1: client.connect_server(); break;
+			case 2: break;
+			case 3: break;
+			case 4: if (client.disconnect_server()) System.out.println("Disconnected...");
+				else System.out.println("The disconnection has failed");
+				break;
+			default: 
+		}
 	}
-   
-	switch (x)
-	{
-		case 1: client.connect_server(); break;
-		case 2: break;
-		case 3: break;
-		case 4: if (client.disconnect_server()) System.out.println("Disconnected...");
-			   else System.out.println("The disconnection has failed");
-			   break;
-		default: 
-	}
+
+   }
 }
