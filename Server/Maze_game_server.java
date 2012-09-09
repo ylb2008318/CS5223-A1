@@ -1,10 +1,3 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package maze_game_server;
-
-import maze_game_server.ui.Server_UI;
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.RemoteException;
@@ -25,7 +18,7 @@ public class Maze_game_server {
     public Maze_game_server() {
     }
 
-    public Maze_game_server(int portNum, String ipAddress) {
+    public Maze_game_server(String ipAddress, int portNum) {
         this.portNum = portNum;
         this.ipAddress = ipAddress;
         registryURL = "rmi://"+this.ipAddress+":"+Integer.toString(this.portNum)+"/game_control";
@@ -46,5 +39,11 @@ public class Maze_game_server {
             System.err.println("Server exception: " + e.toString());
 	}
         return false;
+    }
+    
+    public static void main(String[] args) {
+        //Maze_game_server server = new Maze_game_server(args[0],Integer.parseInt(args[1]));
+        Maze_game_server server = new Maze_game_server("localhost",5896);
+        server.start_server();
     }
 }
