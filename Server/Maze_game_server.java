@@ -24,9 +24,9 @@ public class Maze_game_server {
         registryURL = "rmi://"+this.ipAddress+":"+Integer.toString(this.portNum)+"/game_control";
     }
 
-    public boolean start_server() {
+    public boolean start_server(int size, int treasure_count) {
 	try {
-	    server_stub = new Server_impl();
+	    server_stub = new Server_impl(size, treasure_count);
 	    //server_stub = (Server_interface) UnicastRemoteObject.exportObject(server_obj, 0);
 	    registry = LocateRegistry.getRegistry();
             
@@ -53,8 +53,14 @@ public class Maze_game_server {
     }
     
     public static void main(String[] args) {
-        //Maze_game_server server = new Maze_game_server(args[0],Integer.parseInt(args[1]));
-        Maze_game_server server = new Maze_game_server("localhost",5896);
-        server.start_server();
+        //-h hostname hostport -p size treasurecount
+        Maze_game_server server;
+        if(args.length==6) {
+            server = new Maze_game_server(args[0],Integer.parseInt(args[1]));
+            server.start_server(Integer.parseInt(args[2]),Integer.parseInt(args[3]));
+        } else {
+            server = new Maze_game_server("localhost",1099);
+        }
+        
     }
 }
