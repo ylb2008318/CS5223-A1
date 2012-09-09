@@ -22,6 +22,7 @@ public class Maze_game_server {
         this.portNum = portNum;
         this.ipAddress = ipAddress;
         registryURL = "rmi://"+this.ipAddress+":"+Integer.toString(this.portNum)+"/game_control";
+        System.out.println(registryURL);
     }
 
     public boolean start_server(int size, int treasure_count) {
@@ -56,8 +57,8 @@ public class Maze_game_server {
         //-h hostname hostport -p size treasurecount
         Maze_game_server server;
         if(args.length==6) {
-            server = new Maze_game_server(args[0],Integer.parseInt(args[1]));
-            server.start_server(Integer.parseInt(args[2]),Integer.parseInt(args[3]));
+            server = new Maze_game_server(args[1],Integer.parseInt(args[2]));
+            server.start_server(Integer.parseInt(args[4]),Integer.parseInt(args[5]));
         } else {
             server = new Maze_game_server("localhost",1099);
         }

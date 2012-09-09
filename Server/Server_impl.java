@@ -1,13 +1,15 @@
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 /**
  *
  * @author ghome
@@ -23,6 +25,7 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
     private Map<Integer,Game_player> player_list;
     private Lock joinlock = new ReentrantLock();
     private Lock connectlock = new ReentrantLock();
+    private ReadWriteLock moveLock = new ReentrantReadWriteLock(false);
     
     public Server_impl() throws RemoteException {
         super();
@@ -108,8 +111,56 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
 
     @Override
     public boolean move(int playerID, int direction) throws RemoteException {
-        player_list.get(playerID);
+        boolean result = true;
         
+        moveLock.writeLock().lock();
+        try {
+            Game_player aPlayer = player_list.get(playerID);
+            //moveLock.writeLock().lock();
+            int newX = 0;
+            int newY = 0;
+            switch(direction){
+                case 0://N
+                    newX = aPlayer.getX();
+                    newY = aPlayer.getY()-1;
+                    break;
+                case 1://S
+                    newX = aPlayer.getX();
+                    newY = aPlayer.getY()+1;
+                    break;
+                case 2://W
+                    newX = aPlayer.getX()-1;
+                    newY = aPlayer.getY();
+                    break;
+                case 3://E
+                    newX = aPlayer.getX()+1;
+                    newY = aPlayer.getY();
+                    break;
+                default:
+                    break;  
+            }
+            
+            if(game_map[newX][newY]==null){
+                // Nothing, move
+                game_map[newX][newY] = game_map[aPlayer.getX()][aPlayer.getY()];
+                game_map[aPlayer.getX()][aPlayer.getY()] = null;
+                ((Game_player)aPlayer).setXY(newY, newY);
+            } else if(game_map[newX][newY] instanceof Game_player) {
+                // A player is there cant move
+                result = false;
+            } else if(game_map[newX][newY] instanceof Treasure) {
+                // A treasure is there, move and take it
+                game_map[newX][newY] = game_map[aPlayer.getX()][aPlayer.getY()];
+                game_map[aPlayer.getX()][aPlayer.getY()] = null;
+                ((Game_player)aPlayer).setXY(newY, newY);
+                ((Game_player)aPlayer).addTreasure();
+            }
+        } finally {
+            moveLock.writeLock().unlock();
+        }
+        if(result) {
+            publishInfo();
+        }
         return false;
     }
     
@@ -133,5 +184,20 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
     
     private void initMap() {
         // put treasures and players
+    }
+    
+    private void publishInfo() throws RemoteException{
+        moveLock.readLock().lock();
+        try {
+            Iterator iter = player_info.entrySet().iterator();
+            while (iter.hasNext()) {
+                Entry entry = (Entry) iter.next();
+                if (player_list.containsKey((Integer) entry.getKey())) {
+                    ((Client_interface) entry.getValue()).display(game_map);
+                }
+            }
+        } finally {
+            moveLock.readLock().unlock();
+        }
     }
 }
