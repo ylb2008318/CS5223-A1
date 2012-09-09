@@ -18,7 +18,7 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
     private int treasure_count;
     private Map<Integer,Client_interface> player_info; // List of client to notify
     private int game_stat; // 0:created,1:started,2:ended
-    private Vector<Map_obj> game_map;
+    private Map_obj[][] game_map;
     
     public Server_impl() throws RemoteException {
         super();
