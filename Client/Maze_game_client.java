@@ -1,15 +1,8 @@
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package maze_game_client;
-
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import maze_game_server.Server_interface;
 
 /**
  *
@@ -56,5 +49,10 @@ public class Maze_game_client {
         }
         
         return result;
+    }
+
+    public static void main(String[] args) {
+        Maze_game_client client = new Maze_game_client();
+
     }
 }
