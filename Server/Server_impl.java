@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.locks.Lock;
@@ -26,6 +27,7 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
     private Lock joinlock = new ReentrantLock();
     private Lock connectlock = new ReentrantLock();
     private ReadWriteLock moveLock = new ReentrantReadWriteLock(false);
+    private int curr_treasure;
     
     public Server_impl() throws RemoteException {
         super();
@@ -47,6 +49,9 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
         connectlock.lock();
         try {
             player_info.put(++max_player_ID, client_obj);
+            client_obj.setPlayerID(max_player_ID);
+            client_obj.setSize(size);
+            // set treasure
             System.out.println("A Player is connected - PlayerID : " + max_player_ID);
         } finally {
             connectlock.unlock();
@@ -112,13 +117,22 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
     @Override
     public boolean move(int playerID, int direction) throws RemoteException {
         boolean result = true;
-        
+        int temp_stat;
+        joinlock.lock();
+        try {
+            temp_stat = game_stat;
+        } finally {
+            joinlock.unlock();
+        }
+        if(temp_stat!=1) {
+            return false;
+        } 
         moveLock.writeLock().lock();
         try {
             Game_player aPlayer = player_list.get(playerID);
             //moveLock.writeLock().lock();
-            int newX = 0;
-            int newY = 0;
+            int newX = -1;
+            int newY = -1;
             switch(direction){
                 case 0://N
                     newX = aPlayer.getX();
@@ -139,21 +153,27 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
                 default:
                     break;  
             }
-            
-            if(game_map[newX][newY]==null){
-                // Nothing, move
-                game_map[newX][newY] = game_map[aPlayer.getX()][aPlayer.getY()];
-                game_map[aPlayer.getX()][aPlayer.getY()] = null;
-                ((Game_player)aPlayer).setXY(newY, newY);
-            } else if(game_map[newX][newY] instanceof Game_player) {
-                // A player is there cant move
+
+            if((newX < 0)||(newX>=size)||(newY < 0)||(newY>=size)) {
+                // out of bound
                 result = false;
-            } else if(game_map[newX][newY] instanceof Treasure) {
-                // A treasure is there, move and take it
-                game_map[newX][newY] = game_map[aPlayer.getX()][aPlayer.getY()];
-                game_map[aPlayer.getX()][aPlayer.getY()] = null;
-                ((Game_player)aPlayer).setXY(newY, newY);
-                ((Game_player)aPlayer).addTreasure();
+            } else {
+                if(game_map[newX][newY]==null){
+                    // Nothing, move
+                    game_map[newX][newY] = game_map[aPlayer.getX()][aPlayer.getY()];
+                    game_map[aPlayer.getX()][aPlayer.getY()] = null;
+                    ((Game_player)aPlayer).setXY(newY, newY);
+                } else if(game_map[newX][newY] instanceof Game_player) {
+                    // A player is there cant move
+                    result = false;
+                } else if(game_map[newX][newY] instanceof Treasure) {
+                    // A treasure is there, move and take it
+                    game_map[newX][newY] = game_map[aPlayer.getX()][aPlayer.getY()];
+                    game_map[aPlayer.getX()][aPlayer.getY()] = null;
+                    ((Game_player)aPlayer).setXY(newY, newY);
+                    ((Game_player)aPlayer).addTreasure();
+                    curr_treasure--;
+                }
             }
         } finally {
             moveLock.writeLock().unlock();
@@ -161,6 +181,10 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
         if(result) {
             publishInfo();
         }
+        if(curr_treasure==0) {
+            endGame();
+        }
+
         return false;
     }
     
@@ -182,8 +206,45 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
         }, 20000);
     }
     
+    private void endGame() {
+        joinlock.lock();
+        try {
+            game_stat = 2;
+            initMap();
+        } finally {
+            joinlock.unlock();
+        }
+    }
+    
     private void initMap() {
         // put treasures and players
+        moveLock.writeLock().lock();
+        try {
+            curr_treasure = treasure_count;
+            Random random = new Random();
+            int tempX = 0;
+            int tempY = 0;
+            // put player
+            for(int i=0;i<player_list.size();i++) {
+                do {
+                    tempX = random.nextInt(size);
+                    tempY = random.nextInt(size);
+                } while(game_map[tempX][tempY]==null);
+                game_map[tempX][tempY] = player_list.get(i);
+                ((Game_player)game_map[tempX][tempY]).setXY(tempX, tempY);
+            }
+            
+            // put treasure
+            for(int i=0;i<treasure_count;i++) {
+                do {
+                    tempX = random.nextInt(size);
+                    tempY = random.nextInt(size);
+                } while(game_map[tempX][tempY]==null);
+                game_map[tempX][tempY] = new Treasure(tempX, tempY);
+            }
+        } finally {
+            moveLock.writeLock().unlock();
+        }
     }
     
     private void publishInfo() throws RemoteException{
