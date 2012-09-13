@@ -203,7 +203,7 @@ public class Server_impl implements Server_interface {
                 } finally {
                     joinlock.unlock();
                 }
-            }   
+            }
         }, 20000);
     }
     
@@ -251,12 +251,17 @@ public class Server_impl implements Server_interface {
     private void publishInfo() throws RemoteException{
         moveLock.readLock().lock();
         try {
-            Iterator iter = player_info.entrySet().iterator();
-            while (iter.hasNext()) {
-                Entry entry = (Entry) iter.next();
-                if (player_list.containsKey((Integer) entry.getKey())) {
-                    ((Client_interface) entry.getValue()).display(game_map);
+            connectlock.lock();
+            try {
+                Iterator iter = player_info.entrySet().iterator();
+                while (iter.hasNext()) {
+                    Entry entry = (Entry) iter.next();
+                    if (player_list.containsKey((Integer) entry.getKey())) {
+                        ((Client_interface) entry.getValue()).display(game_map);
+                    }
                 }
+            } finally {
+                connectlock.unlock();
             }
         } finally {
             moveLock.readLock().unlock();
