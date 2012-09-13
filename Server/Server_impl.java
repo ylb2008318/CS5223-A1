@@ -86,8 +86,10 @@ public class Server_impl implements Server_interface {
         try {
             if (game_stat==0) {
                 if (player_list.size() < 9) {
-                    for (int i=0; i < player_list.size(); i++) {
-                        if (player_list.get(i).getPlayerID() == playerID) {
+                    Iterator iter = player_list.entrySet().iterator();
+                    while (iter.hasNext()) {
+                        Entry entry = (Entry) iter.next();
+                        if ((Integer)entry.getKey() == playerID) {
                             result = false;
                             System.out.println("Player : " + playerID + " tried to join the game. But he is already in.");
                             break;
