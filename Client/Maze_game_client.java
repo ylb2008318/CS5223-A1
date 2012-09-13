@@ -45,6 +45,40 @@ public class Maze_game_client {
     }
 
 
+    public void join_game(){
+        boolean result = false;
+        try {
+		System.out.println("Try to join game...");
+		result = server_stub.joinGame(client_obj.playerID);
+		
+		if(result) System.out.println("Connected to the game...");
+		else System.out.println("Connection failed...");
+		} catch (Exception e) {
+		System.err.println("Client exception: " + e.toString());
+		e.printStackTrace();
+		} 
+    }
+
+
+    public void move(){
+        boolean result = false;
+	   int x;
+	   Scanner sc = new Scanner(System.in);
+        try {
+		System.out.println("choose your direction:");
+		x = sc.nextInt();
+		while (x!=1 && x!=2 && x!=3 && x!=4){
+		System.out.println("wrong value, try again.");
+		x = sc.nextInt();
+		result = server_stub.move(client_obj.playerID,x);
+		} 
+	    }catch (Exception e) {
+		System.err.println("Client exception: " + e.toString());
+		e.printStackTrace();
+		} 
+    }
+
+
    public static void main (String[] args){
 	Maze_game_client client = new Maze_game_client();
 	System.out.println("Player Interface:");
@@ -68,8 +102,8 @@ public class Maze_game_client {
 		switch (x)
 		{
 			case 1: client.connect_server(); break;
-			case 2: break;
-			case 3: break;
+			case 2: client.join_game(); break;
+			case 3: client.move();break;
 			case 4: if (client.disconnect_server()) System.out.println("Disconnected...");
 				else System.out.println("The disconnection has failed");
 				break;

@@ -105,7 +105,8 @@ public class Server_impl implements Server_interface {
                 System.out.println("Player : " + playerID + " tried to join the game. But game is already started.");
                 result = false;
             } else if (game_stat==2) {
-                creatGame();
+   System.out.println("Player : " + playerID + " tried to join the game. Creat game");             
+creatGame();
                 player_list.put(playerID,new Game_player(playerID));
                 System.out.println("The game is created.\r\nPlayer : " + playerID + " joined the game.");
             } else {
@@ -207,6 +208,7 @@ public class Server_impl implements Server_interface {
                 }
             }
         }, 20000);
+
     }
     
     private void endGame() {
@@ -245,9 +247,11 @@ public class Server_impl implements Server_interface {
                 } while(game_map[tempX][tempY]==null);
                 game_map[tempX][tempY] = new Treasure(tempX, tempY);
             }
+System.out.println("The game is started.");
         } finally {
             moveLock.writeLock().unlock();
         }
+
     }
     
     private void publishInfo() throws RemoteException{
