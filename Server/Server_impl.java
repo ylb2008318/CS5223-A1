@@ -86,8 +86,10 @@ public class Server_impl implements Server_interface {
         try {
             if (game_stat==0) {
                 if (player_list.size() < 9) {
-                    for (int i=0; i < player_list.size(); i++) {
-                        if (player_list.get(i).getPlayerID() == playerID) {
+                    Iterator iter = player_list.entrySet().iterator();
+                    while (iter.hasNext()) {
+                        Entry entry = (Entry) iter.next();
+                        if ((Integer)entry.getKey() == playerID) {
                             result = false;
                             System.out.println("Player : " + playerID + " tried to join the game. But he is already in.");
                             break;
@@ -197,17 +199,23 @@ creatGame();
         game_stat = 0;
         //start 20s count
         new Timer(true).schedule(new TimerTask() {   
+            int time_remain = 20;
             @Override
-            public void run() {   
-                joinlock.lock();
-                try {
-                    game_stat = 1;
-                    initMap();
-                } finally {
-                    joinlock.unlock();
+            public void run() {
+                System.out.println(time_remain + "s to game start.");
+                if(time_remain-- == 0) {
+                    joinlock.lock();
+                    try {
+                        game_stat = 1;
+                        initMap();
+                    } finally {
+                        joinlock.unlock();
+                    }
+                    this.cancel();
                 }
             }
-        }, 20000);
+        }, 1000,1000);
+
 
     }
     
