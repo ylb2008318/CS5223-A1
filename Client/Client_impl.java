@@ -6,7 +6,7 @@ public class Client_impl implements Client_interface {
    public int size;
   
 	public Client_impl() throws RemoteException {
-		super( );
+		playerID=0;
 	}
 
 	public void setPlayerID(int ID) {

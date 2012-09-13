@@ -20,10 +20,13 @@ public class Maze_game_client {
 	try {
 	    Registry registry = LocateRegistry.getRegistry();
 	    server_stub = (Server_interface) registry.lookup("game_control");
-	    client_obj = new Client_impl();
-	    client_stub = (Client_interface) UnicastRemoteObject.exportObject(client_obj, 0);	    
-	    server_stub.connectServer(client_stub);
-         System.out.println("Connected to server.");
+	    if(client_obj == null || client_obj.playerID==0) {
+			client_obj = new Client_impl();
+			client_stub = (Client_interface) UnicastRemoteObject.exportObject(client_obj, 0);	    
+			server_stub.connectServer(client_stub);
+			System.out.println("Connected to server.");
+		}
+		else System.out.println("Already connected.");
 
 	} catch (Exception e) {
 	    System.err.println("Client exception: " + e.toString());
@@ -35,8 +38,12 @@ public class Maze_game_client {
     public boolean disconnect_server(){
         boolean result = false;
         try {
+	    if(client_obj != null && client_obj.playerID!=0) {
             result = server_stub.disconnectServer(client_obj.playerID);
+		   client_obj.setPlayerID(0);
             System.out.println("Disconnected from server");
+		}
+		else System.out.println("You are not connected.");
         } catch (RemoteException ex) {
             Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -83,6 +90,8 @@ public class Maze_game_client {
 	Maze_game_client client = new Maze_game_client();
 	System.out.println("Player Interface:");
 	while(true) {
+		System.out.println();
+		System.out.println();
 		System.out.println("Select an option:");
 		System.out.println("1: Connect to the server");
 		System.out.println("2: Join game");
