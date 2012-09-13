@@ -197,17 +197,23 @@ creatGame();
         game_stat = 0;
         //start 20s count
         new Timer(true).schedule(new TimerTask() {   
+            int time_remain = 20;
             @Override
-            public void run() {   
-                joinlock.lock();
-                try {
-                    game_stat = 1;
-                    initMap();
-                } finally {
-                    joinlock.unlock();
+            public void run() {
+                System.out.println(time_remain + "s to game start.");
+                if(time_remain-- == 0) {
+                    joinlock.lock();
+                    try {
+                        game_stat = 1;
+                        initMap();
+                    } finally {
+                        joinlock.unlock();
+                    }
+                    this.cancel();
                 }
             }
-        }, 20000);
+        }, 1000,1000);
+
 
     }
     
