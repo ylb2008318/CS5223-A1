@@ -1,7 +1,5 @@
 import java.rmi.registry.Registry;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 
 /**
  *
@@ -12,8 +10,6 @@ public class Maze_game_server {
     private Server_interface server_stub;
     Registry registry;
     
-
-
 
     public boolean start_server(int size, int treasure_count) {
 	
@@ -43,7 +39,6 @@ public class Maze_game_server {
             registry.unbind("game_control");
             return true;
         } catch (Exception e) {
-            e.printStackTrace();
             System.err.println("Server exception: " + e.toString());
 	}
         return false;
@@ -52,6 +47,7 @@ public class Maze_game_server {
     public static void main(String[] args) {
         //-h hostname hostport -p size treasurecount
         Maze_game_server server;
+
         if(args.length==3) {
             server = new Maze_game_server();
             server.start_server(Integer.parseInt(args[1]),Integer.parseInt(args[2]));

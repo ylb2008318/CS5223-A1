@@ -21,4 +21,12 @@ public class Game_player extends Map_obj {
         return treasure_got;
     }
     
+    public void setXY(int x,int y) {
+        this.x = x;
+        this.y = y;
+    }
+    
+    public void addTreasure(){
+        this.treasure_got++;
+    }
 }
