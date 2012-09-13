@@ -199,16 +199,24 @@ creatGame();
         game_stat = 0;
         //start 20s count
         new Timer(true).schedule(new TimerTask() {   
-            int time_remain = 20;
+            int time_remain = 5;
             @Override
             public void run() {
                 System.out.println(time_remain + "s to game start.");
                 if(time_remain-- == 0) {
                     joinlock.lock();
                     try {
+System.out.println("try to start game.");
                         game_stat = 1;
                         initMap();
+try {
+publishInfo();
+	} catch (Exception e) {
+	    System.err.println("Client exception: " + e.toString());
+	    e.printStackTrace();
+	} 
                     } finally {
+System.out.println("unlock.");
                         joinlock.unlock();
                     }
                     this.cancel();
@@ -238,21 +246,24 @@ creatGame();
             int tempX = 0;
             int tempY = 0;
             // put player
-            for(int i=0;i<player_list.size();i++) {
-                do {
-                    tempX = random.nextInt(size);
-                    tempY = random.nextInt(size);
-                } while(game_map[tempX][tempY]==null);
-                game_map[tempX][tempY] = player_list.get(i);
-                ((Game_player)game_map[tempX][tempY]).setXY(tempX, tempY);
-            }
+
+		Iterator iter = player_list.entrySet().iterator();
+		while (iter.hasNext()) {
+			Entry entry = (Entry) iter.next();
+			do {
+				tempX = random.nextInt(size);
+				tempY = random.nextInt(size);
+			} while(game_map[tempX][tempY]!=null);
+			game_map[tempX][tempY] = (Map_obj)entry.getValue();
+			((Game_player)game_map[tempX][tempY]).setXY(tempX, tempY);
+		}
             
             // put treasure
             for(int i=0;i<treasure_count;i++) {
                 do {
                     tempX = random.nextInt(size);
                     tempY = random.nextInt(size);
-                } while(game_map[tempX][tempY]==null);
+                } while(game_map[tempX][tempY]!=null);
                 game_map[tempX][tempY] = new Treasure(tempX, tempY);
             }
 System.out.println("The game is started.");
