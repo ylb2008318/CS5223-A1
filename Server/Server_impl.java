@@ -1,5 +1,4 @@
 import java.rmi.RemoteException;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -48,15 +47,18 @@ public class Server_impl implements Server_interface {
     public void connectServer(Client_info client_obj) throws RemoteException {
 	connectlock.lock();
         try {
-            player_info.put(++max_player_ID, client_obj);
-            client_obj.setPlayerID(max_player_ID);
-            client_obj.setSize(size);
-            // set treasure
-            System.out.println("A Player is connected - PlayerID : " + max_player_ID);
+            if(!player_info.containsValue(client_obj)) {
+                player_info.put(++max_player_ID, client_obj);
+                client_obj.setPlayerID(max_player_ID);
+                client_obj.setSize(size);
+                // set treasure
+                System.out.println("A Player is connected - PlayerID : " + max_player_ID);
+            } else {
+                System.out.println("A Player is already connected.");
+            }
         } finally {
             connectlock.unlock();
         }
-        client_obj.setPlayerID(max_player_ID);
     }
  
 
