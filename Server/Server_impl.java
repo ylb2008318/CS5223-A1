@@ -12,11 +12,11 @@ import java.util.concurrent.locks.ReentrantLock;
  *
  * @author ghome
  */
-public class Server_impl extends UnicastRemoteObject implements Server_interface {
+public class Server_impl implements Server_interface {
 
     private int size;
     private int treasure_count;
-    private Map<Integer,Client_interface> player_info; // List of client to notify
+    private Map<Integer,Client_info> player_info; // List of client to notify
     private int game_stat; // 0:created,1:started,2:ended
     private Map_obj[][] game_map;
     private int max_player_ID;
@@ -28,10 +28,10 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
         super();
     }
 
-    public Server_impl(int size, int treasure_count) throws RemoteException {
+	public Server_impl(int size, int treasure_count) throws RemoteException {
         this.size = size;
         this.treasure_count = treasure_count;
-        player_info = new HashMap<Integer,Client_interface>();
+        player_info = new HashMap<Integer,Client_info>();
         game_stat = 2;
         game_map = new Map_obj[this.size][this.size];
         max_player_ID = 0;
@@ -40,16 +40,17 @@ public class Server_impl extends UnicastRemoteObject implements Server_interface
     
 
     @Override
-    public int connectServer(Client_interface client_obj) throws RemoteException {
-        connectlock.lock();
+    public void connectServer(Client_info client_obj) throws RemoteException {
+	connectlock.lock();
         try {
             player_info.put(++max_player_ID, client_obj);
             System.out.println("A Player is connected - PlayerID : " + max_player_ID);
         } finally {
             connectlock.unlock();
         }
-        return max_player_ID;
+        client_obj.setPlayerID(max_player_ID);
     }
+ 
 
     @Override
     public boolean disconnectServer(int playerID) throws RemoteException {

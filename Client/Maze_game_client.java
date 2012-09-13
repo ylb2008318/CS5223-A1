@@ -9,59 +9,34 @@ import java.util.Scanner;
  *
  * @author ghome
  */
-public class Maze_game_client implements Client_interface {
-    private String serverName;
-    private int serverPort;
-    private String registryURL;
+public class Maze_game_client {
+    private Client_info info;
     private Server_interface server_stub;
-    private Registry registry;
-    private int playerID;
-    private int size;
-    private Client_interface client_interface;
+    //private Client_interface client_interface;
     
-    public Maze_game_client(String name, int port) {
-	   serverName = name;
-	   serverPort = port;
-        registryURL = "rmi://"+this.serverName+":"+Integer.toString(this.serverPort)+"/game_control";
-        playerID = -1;
+    public Maze_game_client() {
+	   info = new Client_info();
     }
 
-    public void display(Map_obj[][] game_map) {
-        int i,j;
-		for (i=0;i<size;i++){
-			for(j=0;j<size;j++){
-				if (game_map[i][j] instanceof Game_player) System.out.print("P  ");
-				else if (game_map[i][j] instanceof Treasure) System.out.print("T  ");
-				else System.out.print("O  ");
-			}
-			System.out.print("\n");
-		}
-    }
     
-    public void setPlayerID(int ID) {
-	playerID=ID;
-    }
-
-    public void setSize(int size) {
-	this.size=size;
-    }
-
     public void connect_server(){
 	try {
-	    registry = LocateRegistry.getRegistry();
-	    server_stub = (Server_interface) registry.lookup(registryURL);
-         playerID = server_stub.connectServer(this);
+	    Registry registry = LocateRegistry.getRegistry();
+	    server_stub = (Server_interface) registry.lookup("game_control");
+         server_stub.connectServer(this.info);
 	    System.out.println("OK");
+	    System.out.println("Client id:"+ this.info.playerID);
 	} catch (Exception e) {
 	    System.err.println("Client exception: " + e.toString());
 	    e.printStackTrace();
 	} 
     }
     
+
     public boolean disconnect_server(){
         boolean result = false;
         try {
-            result = server_stub.disconnectServer(playerID);
+            result = server_stub.disconnectServer(info.playerID);
         } catch (RemoteException ex) {
             Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -71,7 +46,7 @@ public class Maze_game_client implements Client_interface {
 
 
    public static void main (String[] args){
-	Maze_game_client client = new Maze_game_client("Serveur1",1024);
+	Maze_game_client client = new Maze_game_client();
 	System.out.println("Player Interface:");
 	while(true) {
 		System.out.println("Select an option:");
@@ -83,7 +58,7 @@ public class Maze_game_client implements Client_interface {
 		Scanner sc = new Scanner(System.in);
 		int x=-0;
 		x = sc.nextInt();
-		while (x!=1 || x!=2 || x!=3 || x!=4){
+		while (x!=1 && x!=2 && x!=3 && x!=4){
 			System.out.println("wrong value, try again.");
 			x = sc.nextInt();
 		}
