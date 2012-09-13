@@ -1,6 +1,7 @@
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.rmi.server.UnicastRemoteObject;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Scanner;
@@ -10,22 +11,20 @@ import java.util.Scanner;
  * @author ghome
  */
 public class Maze_game_client {
-    private Client_info info;
     private Server_interface server_stub;
-    //private Client_interface client_interface;
+    private Client_interface client_stub;
+    private Client_impl client_obj;
     
-    public Maze_game_client() {
-	   info = new Client_info();
-    }
-
     
     public void connect_server(){
 	try {
 	    Registry registry = LocateRegistry.getRegistry();
 	    server_stub = (Server_interface) registry.lookup("game_control");
-         server_stub.connectServer(this.info);
-	    System.out.println("OK");
-	    System.out.println("Client id:"+ this.info.playerID);
+	    client_obj = new Client_impl();
+	    client_stub = (Client_interface) UnicastRemoteObject.exportObject(client_obj, 0);	    
+	    server_stub.connectServer(client_stub);
+         System.out.println("Connected to server.");
+
 	} catch (Exception e) {
 	    System.err.println("Client exception: " + e.toString());
 	    e.printStackTrace();
@@ -36,7 +35,8 @@ public class Maze_game_client {
     public boolean disconnect_server(){
         boolean result = false;
         try {
-            result = server_stub.disconnectServer(info.playerID);
+            result = server_stub.disconnectServer(client_obj.playerID);
+            System.out.println("Disconnected from server");
         } catch (RemoteException ex) {
             Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -63,6 +63,8 @@ public class Maze_game_client {
 			x = sc.nextInt();
 		}
 	
+		System.out.println();
+		System.out.println();
 		switch (x)
 		{
 			case 1: client.connect_server(); break;

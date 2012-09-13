@@ -1,11 +1,10 @@
-import java.rmi.Remote;
-import java.rmi.RemoteException;
+import java.rmi.*;
 /**
  *
  * @author ghome
  */
 public interface Server_interface extends Remote {
-    public void connectServer(Client_info client_obj) throws RemoteException;
+    public void connectServer(Client_interface client_obj) throws RemoteException;
     
     public boolean disconnectServer(int playerID) throws RemoteException;
     
