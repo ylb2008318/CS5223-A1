@@ -48,11 +48,15 @@ public class Server_impl implements Server_interface {
     public synchronized void connectServer(Client_interface client_obj) throws RemoteException {
 	connectlock.lock();
         try {
-            player_info.put(++max_player_ID, client_obj);
-            client_obj.setPlayerID(max_player_ID);
-            client_obj.setSize(size);
-            // set treasure
-            System.out.println("A Player is connected - PlayerID : " + max_player_ID);
+            if(!player_info.containsValue(client_obj)) {
+                player_info.put(++max_player_ID, client_obj);
+                client_obj.setPlayerID(max_player_ID);
+                client_obj.setSize(size);
+                // set treasure
+                System.out.println("A Player is connected - PlayerID : " + max_player_ID);
+            } else {
+                System.out.println("A Player is already connected.");
+            }
         } finally {
             connectlock.unlock();
         }
@@ -201,7 +205,7 @@ public class Server_impl implements Server_interface {
                 } finally {
                     joinlock.unlock();
                 }
-            }   
+            }
         }, 20000);
     }
     
@@ -249,12 +253,17 @@ public class Server_impl implements Server_interface {
     private void publishInfo() throws RemoteException{
         moveLock.readLock().lock();
         try {
-            Iterator iter = player_info.entrySet().iterator();
-            while (iter.hasNext()) {
-                Entry entry = (Entry) iter.next();
-                if (player_list.containsKey((Integer) entry.getKey())) {
-                    ((Client_interface) entry.getValue()).display(game_map);
+            connectlock.lock();
+            try {
+                Iterator iter = player_info.entrySet().iterator();
+                while (iter.hasNext()) {
+                    Entry entry = (Entry) iter.next();
+                    if (player_list.containsKey((Integer) entry.getKey())) {
+                        ((Client_interface) entry.getValue()).display(game_map);
+                    }
                 }
+            } finally {
+                connectlock.unlock();
             }
         } finally {
             moveLock.readLock().unlock();

@@ -2,6 +2,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
+
 /**
  *
  * @author ghome
@@ -19,18 +20,10 @@ public class Maze_game_server {
 	    server_stub = (Server_interface) UnicastRemoteObject.exportObject(server_obj, 0);
 	    registry = LocateRegistry.getRegistry();           
 	    registry.bind("game_control", server_stub);
-
 	    System.out.println("Server ready");
             return true;
 	} catch (Exception e) {
-	    try{
-		registry.unbind("game_control");
-		registry.bind("game_control", server_stub);
-	    	System.err.println("Server ready");
-	    }catch(Exception ee){
-		System.err.println("Server exception: " + ee.toString());
-	    	ee.printStackTrace();
-	    }
+            System.err.println("Server exception: " + e.toString());
 	}
         return false;
     }
