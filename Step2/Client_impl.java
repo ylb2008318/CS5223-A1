@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 public class Client_impl implements Client_interface {
+
     private Server_interface primaryServer;
     private Server_interface backupServer;
     private int playerID;
@@ -16,8 +17,8 @@ public class Client_impl implements Client_interface {
 
     public Client_impl() throws RemoteException {
         playerID = 0;
-	   connected = false;
-	   inGame = false;
+        connected = false;
+        inGame = false;
     }
 
     @Override
@@ -74,16 +75,15 @@ public class Client_impl implements Client_interface {
         return primaryServer;
     }
 
-
     @Override
     public void display(Map_obj[][] game_map) {
         int i, j;
-        Map<Integer,Integer> player_treasure = new HashMap<Integer,Integer>();
+        Map<Integer, Integer> player_treasure = new HashMap<Integer, Integer>();
         for (i = 0; i < size; i++) {
             for (j = 0; j < size; j++) {
                 if (game_map[i][j] instanceof Game_player) {
-                    player_treasure.put(((Game_player)game_map[i][j]).getPlayerID(), ((Game_player)game_map[i][j]).getTreasure_got());
-                    System.out.print("P" + ((Game_player)game_map[i][j]).getPlayerID() + " ");
+                    player_treasure.put(((Game_player) game_map[i][j]).getPlayerID(), ((Game_player) game_map[i][j]).getTreasure_got());
+                    System.out.print("P" + ((Game_player) game_map[i][j]).getPlayerID() + " ");
                 } else if (game_map[i][j] instanceof Treasure) {
                     System.out.print("T  ");
                 } else {
@@ -111,5 +111,4 @@ public class Client_impl implements Client_interface {
     public boolean isAlive() throws RemoteException {
         return true;
     }
-
 }

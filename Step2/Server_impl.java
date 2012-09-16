@@ -32,7 +32,7 @@ public class Server_impl implements Server_interface {
     private Lock connectlock = new ReentrantLock();
     private ReadWriteLock moveLock = new ReentrantReadWriteLock(false);
     private int curr_treasure;
-    private Server_interface backupServer; 
+    private Server_interface backupServer;
     private int primaryServerID, backupServerID;
     private boolean isPrimaryServer;
 
@@ -81,7 +81,7 @@ public class Server_impl implements Server_interface {
                     moveLock.writeLock().lock();
                     try {
                         player_list.remove(playerID);
-                        if (player_list.isEmpty() && (game_stat==1 || game_stat==0)) {
+                        if (player_list.isEmpty() && (game_stat == 1 || game_stat == 0)) {
                             endGame = true;
                         }
                     } finally {
@@ -91,10 +91,10 @@ public class Server_impl implements Server_interface {
                     joinlock.unlock();
                 }
                 System.out.println("A Player is disconnected - PlayerID : " + playerID);
-                if(endGame) {
+                if (endGame) {
                     endGame();
                 }
-                
+
             } else {
                 result = false;
             }
@@ -167,11 +167,11 @@ public class Server_impl implements Server_interface {
             while (iter.hasNext()) {
                 Entry entry = (Entry) iter.next();
                 if ((Integer) entry.getKey() == playerID) {
-                    aPlayer = (Game_player)entry.getValue();
+                    aPlayer = (Game_player) entry.getValue();
                     break;
                 }
             }
-            if(aPlayer == null) {
+            if (aPlayer == null) {
                 moved = false;
             }
             //System.out.println("Player : " + playerID + " at (" + aPlayer.getX() + "," + aPlayer.getY() + ")");
@@ -215,7 +215,7 @@ public class Server_impl implements Server_interface {
                     outputS = "Player : " + playerID + " moved to (" + newX + "," + newY + ").";
                 } else if (game_map[newX][newY] instanceof Game_player) {
                     // A player is there cant move
-                    outputS = "Player : " + playerID + " cannot move to (" + newX + "," + newY + ") another player :" + ((Game_player)game_map[newX][newY]).getPlayerID() + " is there";
+                    outputS = "Player : " + playerID + " cannot move to (" + newX + "," + newY + ") another player :" + ((Game_player) game_map[newX][newY]).getPlayerID() + " is there";
                     moved = false;
                 } else if (game_map[newX][newY] instanceof Treasure) {
                     // A treasure is there, move and take it
@@ -239,7 +239,7 @@ public class Server_impl implements Server_interface {
             backupServer.printStat(outputS);
             endGame();
         }
-        
+
         return moved;
     }
 
@@ -257,7 +257,7 @@ public class Server_impl implements Server_interface {
                 if (time_remain-- == 0) {
                     joinlock.lock();
                     try {
-                        if(game_stat==0) {
+                        if (game_stat == 0) {
                             game_stat = 1;
                             initMap();
                             try {
@@ -294,12 +294,12 @@ public class Server_impl implements Server_interface {
                     game_map[i][j] = null;
                 }
             }
-            
+
             curr_treasure = treasure_count;
             Random random = new Random();
             int tempX = 0;
             int tempY = 0;
-            
+
             // put player
             Iterator iter = player_list.entrySet().iterator();
             while (iter.hasNext()) {
@@ -320,9 +320,9 @@ public class Server_impl implements Server_interface {
                 } while (game_map[tempX][tempY] != null);
                 game_map[tempX][tempY] = new Treasure(tempX, tempY);
             }
-            
+
             creatBackupServer();
-            
+
             System.out.println("The game is started.");
         } finally {
             moveLock.writeLock().unlock();
@@ -333,10 +333,10 @@ public class Server_impl implements Server_interface {
         Iterator iter = player_info.entrySet().iterator();
         while (iter.hasNext()) {
             Entry entry = (Entry) iter.next();
-            if (player_list.containsKey((Integer) entry.getKey()) && (Integer)entry.getKey() != this.primaryServerID) {
+            if (player_list.containsKey((Integer) entry.getKey()) && (Integer) entry.getKey() != this.primaryServerID) {
                 try {
-                    backupServerID = (Integer)entry.getKey();
-                    backupServer = ((Client_interface) entry.getValue()).createServer(this.size,this.treasure_count);
+                    backupServerID = (Integer) entry.getKey();
+                    backupServer = ((Client_interface) entry.getValue()).createServer(this.size, this.treasure_count);
                     backupServer.setPlayer_info(player_info);
                     backupServer.upToDate(game_map);
                     System.out.println("Backup Server is created");
@@ -346,7 +346,7 @@ public class Server_impl implements Server_interface {
                 break;
             }
         }
-        
+
         // up to date backupServer in clients
         Iterator iter2 = player_info.entrySet().iterator();
         while (iter2.hasNext()) {
@@ -360,27 +360,27 @@ public class Server_impl implements Server_interface {
             }
         }
     }
-    
+
     private void publishInfo() throws RemoteException {
         moveLock.readLock().lock();
         try {
             connectlock.lock();
             try {
                 // up to date backup server
-                try{
+                try {
                     backupServer.upToDate(game_map);
-                } catch (ConnectException ex){
+                } catch (ConnectException ex) {
                     // remove bs and reset a bs                            
                 }
-                
+
                 // up to date clients
                 Iterator iter = player_info.entrySet().iterator();
                 while (iter.hasNext()) {
                     Entry entry = (Entry) iter.next();
                     if (player_list.containsKey((Integer) entry.getKey())) {
-                        try{
+                        try {
                             ((Client_interface) entry.getValue()).display(game_map);
-                        } catch (ConnectException ex){
+                        } catch (ConnectException ex) {
                             // remove client verify if it is a bs                            
                         }
                     }
@@ -432,23 +432,23 @@ public class Server_impl implements Server_interface {
 
     @Override
     public synchronized void becomePS() {
-        if(!isPrimaryServer){
+        if (!isPrimaryServer) {
             // become Primary Server
             // create player list
             int i, j;
-            Map<Integer,Integer> player_treasure = new HashMap<Integer,Integer>();
+            Map<Integer, Integer> player_treasure = new HashMap<Integer, Integer>();
             for (i = 0; i < size; i++) {
                 for (j = 0; j < size; j++) {
                     if (game_map[i][j] instanceof Game_player) {
-                        player_list.put(((Game_player)game_map[i][j]).getPlayerID(), (Game_player)game_map[i][j]);
+                        player_list.put(((Game_player) game_map[i][j]).getPlayerID(), (Game_player) game_map[i][j]);
                     }
                 }
             }
-            
+
             // remove inexiste client
             player_list.remove(primaryServerID);
             player_info.remove(primaryServerID);
-            
+
             primaryServerID = backupServerID;
             // up to date primaryserver in clients
             Iterator iter2 = player_info.entrySet().iterator();
@@ -462,8 +462,8 @@ public class Server_impl implements Server_interface {
                     }
                 }
             }
-            
+
             creatBackupServer();
-        }   
+        }
     }
 }

@@ -62,52 +62,55 @@ public class Maze_game_client {
         return result;
     }
 
-
-
     public void join_game() {
         boolean result = false;
-        if (!client_obj.getConnected()) System.out.println("You are not connected.");
-        else if (client_obj.getinGame()) System.out.println("You are already in game.");
-	   else {
-			try {
-				System.out.println("Try to join game...");
-				result = client_obj.getPrimaryServer().joinGame(client_obj.getPlayerID());
-				client_obj.setinGame(result);
-				if (result) {
-					System.out.println("Connected to the game...");
-				} else {
-					System.out.println("Connection failed, the game may have already started...");
-				}
-			} catch (Exception e) {
-				System.err.println("Client exception: " + e.toString());
-			}
-	   }
+        if (!client_obj.getConnected()) {
+            System.out.println("You are not connected.");
+        } else if (client_obj.getinGame()) {
+            System.out.println("You are already in game.");
+        } else {
+            try {
+                System.out.println("Try to join game...");
+                result = client_obj.getPrimaryServer().joinGame(client_obj.getPlayerID());
+                client_obj.setinGame(result);
+                if (result) {
+                    System.out.println("Connected to the game...");
+                } else {
+                    System.out.println("Connection failed, the game may have already started...");
+                }
+            } catch (Exception e) {
+                System.err.println("Client exception: " + e.toString());
+            }
+        }
     }
 
     public void move() {
         boolean result = false;
-        int x;
-        if (client_obj == null || !client_obj.getConnected())	System.out.println("You are not connected.");
-        else if (!client_obj.getinGame()) System.out.println("You are not in game.");
-        else { 
-			Scanner sc = new Scanner(System.in);
-			try {
-				System.out.println("choose your direction:");
-				x = sc.nextInt();
-				while (x != 1 && x != 2 && x != 3 && x != 4) {
-					System.out.println("wrong value, try again.");
-					x = sc.nextInt();
-				}
-				result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
-			} catch (Exception e) {
-				//System.err.println("Client exception: " + e.toString());
-				try {
-					client_obj.getgetBackupServer().becomePS();
-					result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
-				} catch (Exception e) {
-					System.err.println("Client exception: " + e.toString());
-				}
-         }
+        int x = 0;
+        if (client_obj == null || !client_obj.getConnected()) {
+            System.out.println("You are not connected.");
+        } else if (!client_obj.getinGame()) {
+            System.out.println("You are not in game.");
+        } else {
+            Scanner sc = new Scanner(System.in);
+            try {
+                System.out.println("choose your direction:");
+                x = sc.nextInt();
+                while (x != 1 && x != 2 && x != 3 && x != 4) {
+                    System.out.println("wrong value, try again.");
+                    x = sc.nextInt();
+                }
+                result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
+            } catch (Exception e) {
+                //System.err.println("Client exception: " + e.toString());
+                try {
+                    client_obj.getBackupServer().becomePS();
+                    result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
+                } catch (Exception ex) {
+                    System.err.println("Client exception: " + ex.toString());
+                }
+            }
+        }
     }
 
     public static void main(String[] args) throws NotBoundException {
@@ -115,12 +118,11 @@ public class Maze_game_client {
         if (args.length > 0) {
             if (args[0].equals("-S")) {
                 try {
-                    Server_interface server_stub = client.client_obj.createServer(10,10);
+                    Server_interface server_stub = client.client_obj.createServer(10, 10);
                     Registry registry = LocateRegistry.getRegistry();
                     try {
                         registry.unbind("game_control");
-                    } catch (NotBoundException ex){
-                        
+                    } catch (NotBoundException ex) {
                     } finally {
                         registry.bind("game_control", server_stub);
                     }
