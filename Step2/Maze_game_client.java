@@ -100,8 +100,13 @@ public class Maze_game_client {
 				}
 				result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
 			} catch (Exception e) {
-				System.err.println("Client exception: " + e.toString());
-			}
+				//System.err.println("Client exception: " + e.toString());
+				try {
+					client_obj.getgetBackupServer().becomePS();
+					result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
+				} catch (Exception e) {
+					System.err.println("Client exception: " + e.toString());
+				}
          }
     }
 
