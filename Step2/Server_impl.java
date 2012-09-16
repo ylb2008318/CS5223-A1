@@ -1,8 +1,10 @@
 
 import java.rmi.*;
 import java.rmi.server.*;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -47,6 +49,7 @@ public class Server_impl implements Server_interface {
         game_stat = 2;
         game_map = new Map_obj[this.size][this.size];
         max_player_ID = 0;
+        backupServerID = 0;
         player_list = new HashMap<Integer, Game_player>();
     }
 
@@ -149,6 +152,7 @@ public class Server_impl implements Server_interface {
     public synchronized boolean move(int playerID, int direction) throws RemoteException {
         boolean moved = true;
         String outputS = null;
+        System.out.println("playerID : " + playerID + " move");
         int temp_stat;
         joinlock.lock();
         try {
@@ -227,20 +231,44 @@ public class Server_impl implements Server_interface {
                     outputS = "Player : " + playerID + " moved to (" + newX + "," + newY + ") and get a treasure.";
                 }
             }
+            try {
+                if (backupServerID != 0) {
+                    backupServer.printStat(outputS);
+                }
+                System.out.println(outputS);
+            } catch (ConnectException ce) {
+                backupServerCrash(ce);
+            }
         } finally {
             moveLock.writeLock().unlock();
         }
-        backupServer.printStat(outputS);
+
         if (moved) {
             publishInfo();
         }
         if (curr_treasure == 0) {
             outputS = "No Treasure anymore, the game will ended";
-            backupServer.printStat(outputS);
+            try {
+                if (backupServerID != 0) {
+                    backupServer.printStat(outputS);
+                }
+                System.out.println(outputS);
+            } catch (ConnectException ce) {
+            }
             endGame();
         }
 
         return moved;
+    }
+
+    private void backupServerCrash(Exception e) {
+        System.out.println("Backup server crash.");
+        // remove inexiste client
+        player_list.remove(backupServerID);
+        player_info.remove(backupServerID);
+        backupServerID = 0;
+        backupServer = null;
+        creatBackupServer();
     }
 
     private void creatGame() {
@@ -249,7 +277,7 @@ public class Server_impl implements Server_interface {
         //start 20s count
         new Timer(true).schedule(new TimerTask() {
 
-            int time_remain = 5;
+            int time_remain = 20;
 
             @Override
             public void run() {
@@ -279,6 +307,7 @@ public class Server_impl implements Server_interface {
         joinlock.lock();
         try {
             game_stat = 2;
+            //close backup server
             System.out.println("Game Ended.");
         } finally {
             joinlock.unlock();
@@ -339,6 +368,9 @@ public class Server_impl implements Server_interface {
                     backupServer = ((Client_interface) entry.getValue()).createServer(this.size, this.treasure_count);
                     backupServer.setPlayer_info(player_info);
                     backupServer.upToDate(game_map);
+                    backupServer.setIsPrimaryServer(false);
+                    backupServer.setPrimaryServerID(primaryServerID);
+                    backupServer.setBackupServerID(backupServerID);
                     System.out.println("Backup Server is created");
                 } catch (RemoteException ex) {
                     Logger.getLogger(Server_impl.class.getName()).log(Level.SEVERE, null, ex);
@@ -347,15 +379,19 @@ public class Server_impl implements Server_interface {
             }
         }
 
-        // up to date backupServer in clients
-        Iterator iter2 = player_info.entrySet().iterator();
-        while (iter2.hasNext()) {
-            Entry entry2 = (Entry) iter2.next();
-            if (player_list.containsKey((Integer) entry2.getKey())) {
-                try {
-                    ((Client_interface) entry2.getValue()).setBackupServer(backupServer);
-                } catch (RemoteException ex) {
-                    Logger.getLogger(Server_impl.class.getName()).log(Level.SEVERE, null, ex);
+        if (backupServer == null) {
+            System.out.println("No more potential server.");
+        } else {
+            // up to date backupServer in clients
+            Iterator iter2 = player_info.entrySet().iterator();
+            while (iter2.hasNext()) {
+                Entry entry2 = (Entry) iter2.next();
+                if (player_list.containsKey((Integer) entry2.getKey())) {
+                    try {
+                        ((Client_interface) entry2.getValue()).setBackupServer(backupServer);
+                    } catch (RemoteException ex) {
+                        Logger.getLogger(Server_impl.class.getName()).log(Level.SEVERE, null, ex);
+                    }
                 }
             }
         }
@@ -368,9 +404,11 @@ public class Server_impl implements Server_interface {
             try {
                 // up to date backup server
                 try {
-                    backupServer.upToDate(game_map);
+                    if (backupServerID != 0) {
+                        backupServer.upToDate(game_map);
+                    }
                 } catch (ConnectException ex) {
-                    // remove bs and reset a bs                            
+                    backupServerCrash(ex);
                 }
 
                 // up to date clients
@@ -427,20 +465,24 @@ public class Server_impl implements Server_interface {
 
     @Override
     public void setPrimaryServerID(int primaryServerID) throws RemoteException {
+        System.out.println("Server ps id : " + primaryServerID);
         this.primaryServerID = primaryServerID;
     }
 
     @Override
-    public synchronized void becomePS() {
+    public synchronized void becomePS() throws RemoteException {
         if (!isPrimaryServer) {
+            System.out.println("Try to become primary server ID : " + backupServerID);
+            curr_treasure = 0;
             // become Primary Server
             // create player list
             int i, j;
-            Map<Integer, Integer> player_treasure = new HashMap<Integer, Integer>();
             for (i = 0; i < size; i++) {
                 for (j = 0; j < size; j++) {
                     if (game_map[i][j] instanceof Game_player) {
                         player_list.put(((Game_player) game_map[i][j]).getPlayerID(), (Game_player) game_map[i][j]);
+                    } else if (game_map[i][j] instanceof Treasure) {
+                        curr_treasure++;
                     }
                 }
             }
@@ -450,20 +492,51 @@ public class Server_impl implements Server_interface {
             player_info.remove(primaryServerID);
 
             primaryServerID = backupServerID;
+            backupServerID = 0;
+            // validate obj
+            List<Integer> toRemove = new ArrayList<Integer>();
+            Iterator iter = player_info.entrySet().iterator();
+            while (iter.hasNext()) {
+                Entry entry = (Entry) iter.next();
+                try {
+                    ((Client_interface) entry.getValue()).isAlive();
+                } catch (ConnectException ex) {
+                    toRemove.add((Integer) entry.getKey());
+                }
+            }
+
+            for (int k = 0; k < toRemove.size(); k++) {
+                player_list.remove(toRemove.get(k));
+            }
+
             // up to date primaryserver in clients
             Iterator iter2 = player_info.entrySet().iterator();
             while (iter2.hasNext()) {
                 Entry entry2 = (Entry) iter2.next();
                 if (player_list.containsKey((Integer) entry2.getKey())) {
                     try {
-                        ((Client_interface) entry2.getValue()).setPrimaryServer((Server_interface) UnicastRemoteObject.exportObject(this, 0));
+                        ((Client_interface) entry2.getValue()).setBStoPS();
                     } catch (RemoteException ex) {
-                        Logger.getLogger(Server_impl.class.getName()).log(Level.SEVERE, null, ex);
+                        System.err.println("Server exception: " + ex.toString() + "for player : " + entry2.getKey());
                     }
                 }
             }
 
             creatBackupServer();
+            isPrimaryServer = true;
+            game_stat = 1;
+            System.out.println("become primary server");
         }
+    }
+
+    @Override
+    public void setIsPrimaryServer(boolean isPS) throws RemoteException {
+        this.isPrimaryServer = isPS;
+    }
+
+    @Override
+    public void setBackupServerID(int backupServerID) throws RemoteException {
+        System.out.println("Server bs id : " + backupServerID);
+        this.backupServerID = backupServerID;
     }
 }

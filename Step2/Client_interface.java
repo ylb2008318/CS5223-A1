@@ -21,4 +21,6 @@ public interface Client_interface extends Remote {
     public void setPrimaryServer(Server_interface ps) throws RemoteException;
 
     public void setBackupServer(Server_interface bs) throws RemoteException;
+
+    public void setBStoPS() throws RemoteException;
 }

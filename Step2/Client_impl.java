@@ -42,13 +42,23 @@ public class Client_impl implements Client_interface {
     @Override
     public void setPrimaryServer(Server_interface ps) throws RemoteException {
         primaryServer = ps;
-        System.out.println("Primary Server is up to date.");
+
+        if (this.primaryServer == null) {
+            System.out.println("Client : The PS is NULL.");
+        } else {
+            System.out.println("Client : Primary Server is up to date.");
+        }
     }
 
     @Override
     public void setBackupServer(Server_interface bs) throws RemoteException {
         backupServer = bs;
-        System.out.println("Backup Server is up to date.");
+
+        if (this.backupServer == null) {
+            System.out.println("Client : The BS is NULL.");
+        } else {
+            System.out.println("Client : Backup Server is up to date.");
+        }
     }
 
     public int getPlayerID() {
@@ -104,11 +114,24 @@ public class Client_impl implements Client_interface {
         //throw new UnsupportedOperationException("Not supported yet.");
         Server_impl server_obj = new Server_impl(size, treasure_count);
         Server_interface server_stub = (Server_interface) UnicastRemoteObject.exportObject(server_obj, 0);
+        System.out.println("A new server has been created." + server_stub);
         return server_stub;
     }
 
     @Override
     public boolean isAlive() throws RemoteException {
         return true;
+    }
+
+    @Override
+    public void setBStoPS() throws RemoteException {
+        this.primaryServer = this.backupServer;
+        this.backupServer = null;
+
+        if (this.primaryServer == null) {
+            System.out.println("Client : The PS is NULL.");
+        } else {
+            System.out.println("Client : Switch Server.");
+        }
     }
 }

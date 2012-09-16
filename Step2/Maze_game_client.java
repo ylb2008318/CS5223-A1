@@ -102,12 +102,19 @@ public class Maze_game_client {
                 }
                 result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
             } catch (Exception e) {
-                //System.err.println("Client exception: " + e.toString());
+                System.err.println("Exception: Server crash:" + e.toString());
+                Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, e);
                 try {
                     client_obj.getBackupServer().becomePS();
-                    result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
+                    System.err.println("Client : Retry request");
+                    Server_interface ps = client_obj.getPrimaryServer();
+                    System.err.println("get server: " + ps);
+                    int id = client_obj.getPlayerID();
+                    System.err.println("get id: " + id);
+                    result = ps.move(id, x);
                 } catch (Exception ex) {
-                    System.err.println("Client exception: " + ex.toString());
+                    System.err.println("Client exception: " + ex.toString() + " Move impossible");
+                    Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         }
@@ -128,6 +135,8 @@ public class Maze_game_client {
                     }
                     System.out.println("Server ready");
                     client.connect_server();
+                    client.client_obj.getPrimaryServer().setPrimaryServerID(client.client_obj.getPlayerID());
+                    client.client_obj.getPrimaryServer().setIsPrimaryServer(true);
                 } catch (AlreadyBoundException ex) {
                     System.err.println("Server exception: " + ex.toString());
                 } catch (AccessException ex) {

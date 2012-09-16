@@ -26,5 +26,9 @@ public interface Server_interface extends Remote {
 
     public void setPrimaryServerID(int primaryServerID) throws RemoteException;
 
+    public void setBackupServerID(int backupServerID) throws RemoteException;
+
+    public void setIsPrimaryServer(boolean isPS) throws RemoteException;
+
     public void becomePS() throws RemoteException;
 }
