@@ -9,24 +9,68 @@ import java.util.Map.Entry;
 public class Client_impl implements Client_interface {
     private Server_interface primaryServer;
     private Server_interface backupServer;
-    public int playerID;
-    public int size;
+    private int playerID;
+    private int size;
+    private boolean connected;
+    private boolean inGame;
 
     public Client_impl() throws RemoteException {
         playerID = 0;
+	   connected = false;
+	   inGame = false;
     }
 
-    @Override
     public void setPlayerID(int ID) {
         playerID = ID;
     }
 
-    @Override
     public void setSize(int size) {
         this.size = size;
     }
 
-    @Override
+    public void setConnected(boolean bool) {
+        this.connected = bool;
+    }
+
+    public void setinGame(boolean bool) {
+        this.inGame = bool;
+    }
+
+    public void setPrimaryServer(Server_interface ps) throws RemoteException {
+        //exclusion?
+        primaryServer = ps;
+    }
+
+    public void setBackupServer(Server_interface bs) throws RemoteException {
+        //exclusion?
+        backupServer = bs;
+    }
+
+    public int getPlayerID() {
+        return playerID;
+    }
+
+    public int getSize() {
+        return this.size;
+    }
+
+    public boolean getinGame() {
+        return this.inGame;
+    }
+
+    public boolean getConnected() {
+        return this.connected;
+    }
+
+    public Server_interface getBackupServer() {
+        return backupServer;
+    }
+
+    public Server_interface getPrimaryServer() {
+        return primaryServer;
+    }
+
+
     public void display(Map_obj[][] game_map) {
         int i, j;
         Map<Integer,Integer> player_treasure = new HashMap<Integer,Integer>();
@@ -46,40 +90,19 @@ public class Client_impl implements Client_interface {
         Iterator iter = player_treasure.entrySet().iterator();
         while (iter.hasNext()) {
             Entry entry = (Entry) iter.next();
-            System.out.println("Player " + entry.getKey() + " get " + entry.getValue() + " tresure(s).");
+            System.out.println("Player " + entry.getKey() + " get " + entry.getValue() + " treasure(s).");
         }
     }
 
-    @Override
-    public Server_interface CreateServer(int size, int treasure_count) throws RemoteException {
+    public Server_interface createServer(int size, int treasure_count) throws RemoteException {
         //throw new UnsupportedOperationException("Not supported yet.");
         Server_impl server_obj = new Server_impl(size, treasure_count);
         Server_interface server_stub = (Server_interface) UnicastRemoteObject.exportObject(server_obj, 0);
         return server_stub;
     }
 
-    @Override
     public boolean isAlive() throws RemoteException {
         return true;
     }
 
-    @Override
-    public void setPrimaryServer(Server_interface ps) throws RemoteException {
-        //exclusion?
-        primaryServer = ps;
-    }
-
-    @Override
-    public void setBackupServer(Server_interface bs) throws RemoteException {
-        //exclusion?
-        backupServer = bs;
-    }
-
-    public Server_interface getBackupServer() {
-        return backupServer;
-    }
-
-    public Server_interface getPrimaryServer() {
-        return primaryServer;
-    }
 }

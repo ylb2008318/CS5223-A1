@@ -19,13 +19,23 @@ public class Maze_game_client {
     private Client_interface client_stub;
     private Client_impl client_obj;
 
+    public Maze_game_client() {
+        try {
+            client_obj = new Client_impl();
+            client_stub = (Client_interface) UnicastRemoteObject.exportObject(client_obj, 0);
+        } catch (RemoteException ex) {
+            Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     public void connect_server() {
         try {
-            if (client_obj.playerID == 0) {
+            if (!client_obj.getConnected()) {
                 Registry registry = LocateRegistry.getRegistry();
                 client_stub.setPrimaryServer((Server_interface) registry.lookup("game_control"));
                 client_obj.getPrimaryServer().connectServer(client_stub);
-                System.out.println("Connected to server.");
+                client_obj.setConnected(true);
+                System.out.println("Connection to the server: done");
             } else {
                 System.out.println("Already connected.");
             }
@@ -37,10 +47,11 @@ public class Maze_game_client {
     public boolean disconnect_server() {
         boolean result = false;
         try {
-            if (client_obj != null && client_obj.playerID != 0) {
-                result = client_obj.getPrimaryServer().disconnectServer(client_obj.playerID);
+            if (client_obj.getConnected()) {
+                result = client_obj.getPrimaryServer().disconnectServer(client_obj.getPlayerID());
                 client_obj.setPlayerID(0);
-                System.out.println("Disconnected from server");
+                client_obj.setConnected(false);
+                System.out.println("You are disconnected from the server");
             } else {
                 System.out.println("You are not connected.");
             }
@@ -51,46 +62,47 @@ public class Maze_game_client {
         return result;
     }
 
-    public Maze_game_client() {
-        try {
-            client_obj = new Client_impl();
-            client_stub = (Client_interface) UnicastRemoteObject.exportObject(client_obj, 0);
-        } catch (RemoteException ex) {
-            Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
+
 
     public void join_game() {
         boolean result = false;
-        try {
-            System.out.println("Try to join game...");
-            result = client_obj.getPrimaryServer().joinGame(client_obj.playerID);
-
-            if (result) {
-                System.out.println("Connected to the game...");
-            } else {
-                System.out.println("Connection failed...");
-            }
-        } catch (Exception e) {
-            System.err.println("Client exception: " + e.toString());
-        }
+        if (!client_obj.getConnected()) System.out.println("You are not connected.");
+        else if (client_obj.getinGame()) System.out.println("You are already in game.");
+	   else {
+			try {
+				System.out.println("Try to join game...");
+				result = client_obj.getPrimaryServer().joinGame(client_obj.getPlayerID());
+				client_obj.setinGame(result);
+				if (result) {
+					System.out.println("Connected to the game...");
+				} else {
+					System.out.println("Connection failed, the game may have already started...");
+				}
+			} catch (Exception e) {
+				System.err.println("Client exception: " + e.toString());
+			}
+	   }
     }
 
     public void move() {
         boolean result = false;
         int x;
-        Scanner sc = new Scanner(System.in);
-        try {
-            System.out.println("choose your direction:");
-            x = sc.nextInt();
-            while (x != 1 && x != 2 && x != 3 && x != 4) {
-                System.out.println("wrong value, try again.");
-                x = sc.nextInt();
-            }
-            result = client_obj.getPrimaryServer().move(client_obj.playerID, x);
-        } catch (Exception e) {
-            System.err.println("Client exception: " + e.toString());
-        }
+        if (client_obj == null || !client_obj.getConnected())	System.out.println("You are not connected.");
+        else if (!client_obj.getinGame()) System.out.println("You are not in game.");
+        else { 
+			Scanner sc = new Scanner(System.in);
+			try {
+				System.out.println("choose your direction:");
+				x = sc.nextInt();
+				while (x != 1 && x != 2 && x != 3 && x != 4) {
+					System.out.println("wrong value, try again.");
+					x = sc.nextInt();
+				}
+				result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
+			} catch (Exception e) {
+				System.err.println("Client exception: " + e.toString());
+			}
+         }
     }
 
     public static void main(String[] args) throws NotBoundException {
@@ -98,7 +110,7 @@ public class Maze_game_client {
         if (args.length > 0) {
             if (args[0].equals("-S")) {
                 try {
-                    Server_interface server_stub = client.client_obj.CreateServer(10,10);
+                    Server_interface server_stub = client.client_obj.createServer(10,10);
                     Registry registry = LocateRegistry.getRegistry();
                     try {
                         registry.unbind("game_control");
