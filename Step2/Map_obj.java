@@ -7,9 +7,10 @@
  *
  * @author ghome
  */
-public class Map_obj implements java.io.Serializable{
-    protected int x,y;
-    
+public class Map_obj implements java.io.Serializable {
+
+    protected int x, y;
+
     public Map_obj() {
     }
 

@@ -20,10 +20,12 @@ public class Client_impl implements Client_interface {
 	   inGame = false;
     }
 
+    @Override
     public void setPlayerID(int ID) {
         playerID = ID;
     }
 
+    @Override
     public void setSize(int size) {
         this.size = size;
     }
@@ -36,12 +38,16 @@ public class Client_impl implements Client_interface {
         this.inGame = bool;
     }
 
+    @Override
     public void setPrimaryServer(Server_interface ps) throws RemoteException {
         primaryServer = ps;
+        System.out.println("Primary Server is up to date.");
     }
 
+    @Override
     public void setBackupServer(Server_interface bs) throws RemoteException {
         backupServer = bs;
+        System.out.println("Backup Server is up to date.");
     }
 
     public int getPlayerID() {
@@ -69,6 +75,7 @@ public class Client_impl implements Client_interface {
     }
 
 
+    @Override
     public void display(Map_obj[][] game_map) {
         int i, j;
         Map<Integer,Integer> player_treasure = new HashMap<Integer,Integer>();
@@ -92,6 +99,7 @@ public class Client_impl implements Client_interface {
         }
     }
 
+    @Override
     public Server_interface createServer(int size, int treasure_count) throws RemoteException {
         //throw new UnsupportedOperationException("Not supported yet.");
         Server_impl server_obj = new Server_impl(size, treasure_count);
@@ -99,6 +107,7 @@ public class Client_impl implements Client_interface {
         return server_stub;
     }
 
+    @Override
     public boolean isAlive() throws RemoteException {
         return true;
     }

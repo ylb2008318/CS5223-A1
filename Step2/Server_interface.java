@@ -19,8 +19,10 @@ public interface Server_interface extends Remote {
     
     public void printStat(String traceCpoy) throws RemoteException;
     
-    public boolean VerifyPSCrash() throws RemoteException;
-    
     public boolean isAlive() throws RemoteException;
+    
+    public void setPrimaryServerID(int primaryServerID) throws RemoteException;
+    
+    public void becomePS() throws RemoteException;
 }
 
