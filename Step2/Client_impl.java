@@ -37,12 +37,10 @@ public class Client_impl implements Client_interface {
     }
 
     public void setPrimaryServer(Server_interface ps) throws RemoteException {
-        //exclusion?
         primaryServer = ps;
     }
 
     public void setBackupServer(Server_interface bs) throws RemoteException {
-        //exclusion?
         backupServer = bs;
     }
 
