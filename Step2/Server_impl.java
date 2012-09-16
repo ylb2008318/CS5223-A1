@@ -12,6 +12,8 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -30,6 +32,9 @@ public class Server_impl implements Server_interface {
     private Lock connectlock = new ReentrantLock();
     private ReadWriteLock moveLock = new ReentrantReadWriteLock(false);
     private int curr_treasure;
+    private Server_interface backupServer; 
+    private int primaryServerID, backupServerID;
+    private boolean isPrimaryServer;
 
     public Server_impl() throws RemoteException {
         super();
@@ -46,7 +51,7 @@ public class Server_impl implements Server_interface {
     }
 
     @Override
-    public synchronized void connectServer(Client_interface client_obj) throws RemoteException {
+    public void connectServer(Client_interface client_obj) throws RemoteException {
         connectlock.lock();
         try {
             if (!player_info.containsValue(client_obj)) {
@@ -141,8 +146,9 @@ public class Server_impl implements Server_interface {
     }
 
     @Override
-    public boolean move(int playerID, int direction) throws RemoteException {
+    public synchronized boolean move(int playerID, int direction) throws RemoteException {
         boolean moved = true;
+        String outputS = null;
         int temp_stat;
         joinlock.lock();
         try {
@@ -151,10 +157,9 @@ public class Server_impl implements Server_interface {
             joinlock.unlock();
         }
         if (temp_stat != 1) {
-            System.out.println("Player : " + playerID + " trying to move. But the game is not started");
+            outputS = "Player : " + playerID + " trying to move. But the game is not started";
             return false;
         }
-        System.out.println("Player : " + playerID + " trying to move ");
         moveLock.writeLock().lock();
         try {
             Game_player aPlayer = null;
@@ -199,7 +204,7 @@ public class Server_impl implements Server_interface {
 
             if ((newX < 0) || (newX >= size) || (newY < 0) || (newY >= size)) {
                 // out of bound
-                System.out.println("Player : " + playerID + " (" + newX + "," + newY + ") move out of bound ");
+                outputS = "Player : " + playerID + " (" + newX + "," + newY + ") move out of bound ";
                 moved = false;
             } else {
                 if (game_map[newX][newY] == null) {
@@ -207,10 +212,10 @@ public class Server_impl implements Server_interface {
                     game_map[newX][newY] = game_map[aPlayer.getX()][aPlayer.getY()];
                     game_map[aPlayer.getX()][aPlayer.getY()] = null;
                     ((Game_player) aPlayer).setXY(newX, newY);
-                    System.out.println("Player : " + playerID + " moved to (" + newX + "," + newY + ").");
+                    outputS = "Player : " + playerID + " moved to (" + newX + "," + newY + ").";
                 } else if (game_map[newX][newY] instanceof Game_player) {
                     // A player is there cant move
-                    System.out.println("Player : " + playerID + " cannot move to (" + newX + "," + newY + ") another player :" + ((Game_player)game_map[newX][newY]).getPlayerID() + " is there");
+                    outputS = "Player : " + playerID + " cannot move to (" + newX + "," + newY + ") another player :" + ((Game_player)game_map[newX][newY]).getPlayerID() + " is there";
                     moved = false;
                 } else if (game_map[newX][newY] instanceof Treasure) {
                     // A treasure is there, move and take it
@@ -219,21 +224,22 @@ public class Server_impl implements Server_interface {
                     ((Game_player) aPlayer).setXY(newX, newY);
                     ((Game_player) aPlayer).addTreasure();
                     curr_treasure--;
-                    System.out.println("Player : " + playerID + " moved to (" + newX + "," + newY + ") and get a treasure.");
+                    outputS = "Player : " + playerID + " moved to (" + newX + "," + newY + ") and get a treasure.";
                 }
             }
         } finally {
             moveLock.writeLock().unlock();
         }
-        
+        backupServer.printStat(outputS);
         if (moved) {
             publishInfo();
         }
         if (curr_treasure == 0) {
-            System.out.print("No Treasure anymore, the game will ended");
+            outputS = "No Treasure anymore, the game will ended";
+            backupServer.printStat(outputS);
             endGame();
         }
-
+        
         return moved;
     }
 
@@ -314,23 +320,69 @@ public class Server_impl implements Server_interface {
                 } while (game_map[tempX][tempY] != null);
                 game_map[tempX][tempY] = new Treasure(tempX, tempY);
             }
+            
+            creatBackupServer();
+            
             System.out.println("The game is started.");
         } finally {
             moveLock.writeLock().unlock();
         }
-
     }
 
+    private void creatBackupServer() {
+        Iterator iter = player_info.entrySet().iterator();
+        while (iter.hasNext()) {
+            Entry entry = (Entry) iter.next();
+            if (player_list.containsKey((Integer) entry.getKey()) && (Integer)entry.getKey() != this.primaryServerID) {
+                try {
+                    backupServerID = (Integer)entry.getKey();
+                    backupServer = ((Client_interface) entry.getValue()).createServer(this.size,this.treasure_count);
+                    backupServer.setPlayer_info(player_info);
+                    backupServer.upToDate(game_map);
+                    System.out.println("Backup Server is created");
+                } catch (RemoteException ex) {
+                    Logger.getLogger(Server_impl.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                break;
+            }
+        }
+        
+        // up to date backupServer in clients
+        Iterator iter2 = player_info.entrySet().iterator();
+        while (iter2.hasNext()) {
+            Entry entry2 = (Entry) iter2.next();
+            if (player_list.containsKey((Integer) entry2.getKey())) {
+                try {
+                    ((Client_interface) entry2.getValue()).setBackupServer(backupServer);
+                } catch (RemoteException ex) {
+                    Logger.getLogger(Server_impl.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        }
+    }
+    
     private void publishInfo() throws RemoteException {
         moveLock.readLock().lock();
         try {
             connectlock.lock();
             try {
+                // up to date backup server
+                try{
+                    backupServer.upToDate(game_map);
+                } catch (ConnectException ex){
+                    // remove bs and reset a bs                            
+                }
+                
+                // up to date clients
                 Iterator iter = player_info.entrySet().iterator();
                 while (iter.hasNext()) {
                     Entry entry = (Entry) iter.next();
                     if (player_list.containsKey((Integer) entry.getKey())) {
-                        ((Client_interface) entry.getValue()).display(game_map);
+                        try{
+                            ((Client_interface) entry.getValue()).display(game_map);
+                        } catch (ConnectException ex){
+                            // remove client verify if it is a bs                            
+                        }
                     }
                 }
             } finally {
@@ -343,26 +395,75 @@ public class Server_impl implements Server_interface {
 
     @Override
     public boolean upToDate(Map_obj[][] game_map) throws RemoteException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        moveLock.readLock().lock();
+        try {
+            this.game_map = game_map;
+        } finally {
+            moveLock.readLock().unlock();
+        }
+        return true;
     }
 
     @Override
     public boolean setPlayer_info(Map<Integer, Client_interface> player_info) throws RemoteException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        connectlock.lock();
+        try {
+            this.player_info = player_info;
+        } finally {
+            connectlock.unlock();
+        }
+        return true;
     }
 
     @Override
     public void printStat(String traceCpoy) throws RemoteException {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public boolean VerifyPSCrash() throws RemoteException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        System.out.println(traceCpoy);
     }
 
     @Override
     public boolean isAlive() throws RemoteException {
         return true;
+    }
+
+    @Override
+    public void setPrimaryServerID(int primaryServerID) throws RemoteException {
+        this.primaryServerID = primaryServerID;
+    }
+
+    @Override
+    public synchronized void becomePS() {
+        if(!isPrimaryServer){
+            // become Primary Server
+            // create player list
+            int i, j;
+            Map<Integer,Integer> player_treasure = new HashMap<Integer,Integer>();
+            for (i = 0; i < size; i++) {
+                for (j = 0; j < size; j++) {
+                    if (game_map[i][j] instanceof Game_player) {
+                        player_list.put(((Game_player)game_map[i][j]).getPlayerID(), (Game_player)game_map[i][j]);
+                    }
+                }
+            }
+            
+            // remove inexiste client
+            player_list.remove(primaryServerID);
+            player_info.remove(primaryServerID);
+            
+            primaryServerID = backupServerID;
+            // up to date primaryserver in clients
+            Iterator iter2 = player_info.entrySet().iterator();
+            while (iter2.hasNext()) {
+                Entry entry2 = (Entry) iter2.next();
+                if (player_list.containsKey((Integer) entry2.getKey())) {
+                    try {
+                        ((Client_interface) entry2.getValue()).setPrimaryServer((Server_interface) UnicastRemoteObject.exportObject(this, 0));
+                    } catch (RemoteException ex) {
+                        Logger.getLogger(Server_impl.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+            
+            creatBackupServer();
+        }   
     }
 }
