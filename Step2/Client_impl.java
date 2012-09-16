@@ -40,14 +40,12 @@ public class Client_impl implements Client_interface {
 
     @Override
     public void setPrimaryServer(Server_interface ps) throws RemoteException {
-        //exclusion?
         primaryServer = ps;
         System.out.println("Primary Server is up to date.");
     }
 
     @Override
     public void setBackupServer(Server_interface bs) throws RemoteException {
-        //exclusion?
         backupServer = bs;
         System.out.println("Backup Server is up to date.");
     }
