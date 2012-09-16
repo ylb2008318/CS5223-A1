@@ -245,7 +245,7 @@ public class Server_impl implements Server_interface {
         //start 20s count
         new Timer(true).schedule(new TimerTask() {
 
-            int time_remain = 5;
+            int time_remain = 20;
 
             @Override
             public void run() {

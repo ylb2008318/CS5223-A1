@@ -8,24 +8,48 @@ import java.util.Map.Entry;
 
 public class Client_impl implements Client_interface {
 
-    public int playerID;
-    public int size;
+    private int playerID;
+    private int size;
+    private boolean connected;
+    private boolean inGame;
 
     public Client_impl() throws RemoteException {
         playerID = 0;
     }
 
-    @Override
     public void setPlayerID(int ID) {
         playerID = ID;
     }
 
-    @Override
     public void setSize(int size) {
         this.size = size;
     }
 
-    @Override
+    public void setConnected(boolean bool) {
+        this.connected = bool;
+    }
+
+    public void setinGame(boolean bool) {
+        this.inGame = bool;
+    }
+
+    public int getPlayerID() {
+        return playerID;
+    }
+
+    public int getSize() {
+        return this.size;
+    }
+
+    public boolean getinGame() {
+        return this.inGame;
+    }
+
+    public boolean getConnected() {
+        return this.connected;
+    }
+
+
     public void display(Map_obj[][] game_map) {
         int i, j;
         Map<Integer,Integer> player_treasure = new HashMap<Integer,Integer>();

@@ -31,35 +31,35 @@ public class Maze_game_server {
             System.err.println("Server exception: " + e.toString());
         }
         
-        boolean exit = false;
-        Scanner sc = new Scanner(System.in);
-        while (!exit) {
-            System.out.println();
-            System.out.println();
-            System.out.println("Select an option:");
-            System.out.println("1: Unbind");
-            System.out.println("2: End Game");
+        //boolean exit = false;
+        //Scanner sc = new Scanner(System.in);
+        //while (!exit) {
+          //  System.out.println();
+          //  System.out.println();
+          //  System.out.println("Select an option:");
+          //  System.out.println("1: Unbind");
+          //  System.out.println("2: End Game");
             
-            int x = 0;
-            System.out.println();
-            x = sc.nextInt();
-            switch (x) {
-                case 1:
-                    try {
-                        registry.unbind("game_control");
-                    } catch (Exception ex) {
-                        System.err.println("Server exception: " + ex.toString());
-                    }
-                    exit = true;
-                    break;
-                case 2:
-                    server_obj.endGame();
-                    break;
-                default:
-                    System.out.println("wrong value, try again.");
-                    break;
-            }
-        }
+          //  int x = 0;
+          //  System.out.println();
+          //  x = sc.nextInt();
+          //  switch (x) {
+          //      case 1:
+          //          try {
+          //              registry.unbind("game_control");
+          //          } catch (Exception ex) {
+          //              System.err.println("Server exception: " + ex.toString());
+          //          }
+          //          exit = true;
+          //          break;
+          //      case 2:
+          //          server_obj.endGame();
+          //          break;
+          //      default:
+          //          System.out.println("wrong value, try again.");
+          //          break;
+          //  }
+        //}
 
         return false;
     }
