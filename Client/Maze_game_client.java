@@ -57,7 +57,8 @@ public class Maze_game_client {
     public void join_game() {
         boolean result = false;
         if (client_obj == null || !client_obj.getConnected())	System.out.println("You are not connected.");
-        else {	
+        else if (client_obj.getinGame()) System.out.println("You are already in game.");
+	   else {	
 			try {
 				System.out.println("Try to join game...");
 				result = server_stub.joinGame(client_obj.getPlayerID());
@@ -66,7 +67,7 @@ public class Maze_game_client {
 					System.out.println("Connection to the game: done");
 						
 				} else {
-					System.out.println("Connection failed...");
+					System.out.println("Connection failed, the game may have already started...");
 				}
 			} catch (Exception e) {
 				System.err.println("Client exception: " + e.toString());
