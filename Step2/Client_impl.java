@@ -105,7 +105,7 @@ public class Client_impl implements Client_interface {
         Iterator iter = player_treasure.entrySet().iterator();
         while (iter.hasNext()) {
             Entry entry = (Entry) iter.next();
-            System.out.println("Player " + entry.getKey() + " get " + entry.getValue() + " treasure(s).");
+            System.out.println("Player " + entry.getKey() + " got " + entry.getValue() + " treasure(s).");
         }
     }
 
@@ -114,7 +114,7 @@ public class Client_impl implements Client_interface {
         //throw new UnsupportedOperationException("Not supported yet.");
         Server_impl server_obj = new Server_impl(size, treasure_count);
         Server_interface server_stub = (Server_interface) UnicastRemoteObject.exportObject(server_obj, 0);
-        System.out.println("A new server has been created." + server_stub);
+        System.out.println("A new server has been created." + server_stub.toString());
         return server_stub;
     }
 

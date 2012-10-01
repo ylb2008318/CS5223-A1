@@ -1,11 +1,15 @@
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.rmi.AccessException;
 import java.rmi.AlreadyBoundException;
+import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
+import java.util.NoSuchElementException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.Scanner;
@@ -28,11 +32,18 @@ public class Maze_game_client {
         }
     }
 
-    public void connect_server() {
+    public void connect_server(boolean custom) {
         try {
             if (!client_obj.getConnected()) {
                 Registry registry = LocateRegistry.getRegistry();
-                client_stub.setPrimaryServer((Server_interface) registry.lookup("game_control"));
+                if(custom) {
+                    System.out.println("Please give server IP:Port");
+                    BufferedReader in = new BufferedReader(new InputStreamReader(System.in));
+                    String addr = in.readLine();
+                    client_stub.setPrimaryServer((Server_interface) Naming.lookup("rmi://"+ addr +"/game_control"));
+                } else {
+                    client_stub.setPrimaryServer((Server_interface) Naming.lookup("//127.0.0.1:1099/game_control"));
+                }
                 client_obj.getPrimaryServer().connectServer(client_stub);
                 client_obj.setConnected(true);
                 System.out.println("Connection to the server: done");
@@ -103,18 +114,18 @@ public class Maze_game_client {
                 result = client_obj.getPrimaryServer().move(client_obj.getPlayerID(), x);
             } catch (Exception e) {
                 System.err.println("Exception: Server crash:" + e.toString());
-                Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, e);
+                //Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, e);
                 try {
                     client_obj.getBackupServer().becomePS();
-                    System.err.println("Client : Retry request");
+                    System.err.print("Client : Retry Request...\t");
                     Server_interface ps = client_obj.getPrimaryServer();
-                    System.err.println("get server: " + ps);
+                    //System.err.println("get server: " + ps);
                     int id = client_obj.getPlayerID();
-                    System.err.println("get id: " + id);
+                    System.err.println("Get New Server Id: " + id);
                     result = ps.move(id, x);
                 } catch (Exception ex) {
                     System.err.println("Client exception: " + ex.toString() + " Move impossible");
-                    Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
+                    //Logger.getLogger(Maze_game_client.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         }
@@ -134,7 +145,7 @@ public class Maze_game_client {
                         registry.bind("game_control", server_stub);
                     }
                     System.out.println("Server ready");
-                    client.connect_server();
+                    client.connect_server(false);
                     client.client_obj.getPrimaryServer().setPrimaryServerID(client.client_obj.getPlayerID());
                     client.client_obj.getPrimaryServer().setIsPrimaryServer(true);
                 } catch (AlreadyBoundException ex) {
@@ -147,47 +158,50 @@ public class Maze_game_client {
             }
         }
 
-        System.out.println("Player Interface:");
+        System.out.print("Player Interface - ");
         Scanner sc = new Scanner(System.in);
+        try {
+            while (true) {
+                System.out.println("Select an option:");
+                System.out.println("1: Connect to the server");
+                System.out.println("2: Join game");
+                System.out.println("3: Move");
+                System.out.println("4: Disconnect to the server");
 
-        while (true) {
-            System.out.println();
-            System.out.println();
-            System.out.println("Select an option:");
-            System.out.println("1: Connect to the server");
-            System.out.println("2: Join game");
-            System.out.println("3: Move");
-            System.out.println("4: Disconnect to the server");
-
-            int x = -0;
-            x = sc.nextInt();
-            while (x != 1 && x != 2 && x != 3 && x != 4) {
-                System.out.println("wrong value, try again.");
+                int x = -0;
                 x = sc.nextInt();
-            }
+                while (x != 1 && x != 2 && x != 3 && x != 4) {
+                    System.out.println("wrong value, try again.");
+                    x = sc.nextInt();
+                }
 
-            System.out.println();
-            System.out.println();
-            switch (x) {
-                case 1:
-                    client.connect_server();
-                    break;
-                case 2:
-                    client.join_game();
-                    break;
-                case 3:
-                    client.move();
-                    break;
-                case 4:
-                    if (client.disconnect_server()) {
-                        System.out.println("Disconnected...");
-                    } else {
-                        System.out.println("The disconnection has failed");
-                    }
-                    break;
-                default:
+                System.out.println();
+                switch (x) {
+                    case 1:
+                        client.connect_server(true);
+                        break;
+                    case 2:
+                        client.join_game();
+                        break;
+                    case 3:
+                        client.move();
+                        break;
+                    case 4:
+                        if (client.disconnect_server()) {
+                            System.out.println("Disconnected...");
+                        } else {
+                            System.out.println("The disconnection has failed");
+                        }
+                        break;
+                    default:
+                }
             }
         }
-
+        catch (NoSuchElementException e) {
+            
+        }
+        finally {
+            sc.close();
+        }
     }
 }

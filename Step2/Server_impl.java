@@ -465,7 +465,7 @@ public class Server_impl implements Server_interface {
 
     @Override
     public void setPrimaryServerID(int primaryServerID) throws RemoteException {
-        System.out.println("Server ps id : " + primaryServerID);
+        System.out.println("New Primary Server Id Is : " + primaryServerID);
         this.primaryServerID = primaryServerID;
     }
 
@@ -525,7 +525,7 @@ public class Server_impl implements Server_interface {
             creatBackupServer();
             isPrimaryServer = true;
             game_stat = 1;
-            System.out.println("become primary server");
+            //System.out.println("become primary server");
         }
     }
 
@@ -536,7 +536,7 @@ public class Server_impl implements Server_interface {
 
     @Override
     public void setBackupServerID(int backupServerID) throws RemoteException {
-        System.out.println("Server bs id : " + backupServerID);
+        System.out.println("New Backup Server Id Is : " + backupServerID);
         this.backupServerID = backupServerID;
     }
 }
