@@ -1,4 +1,3 @@
-
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.rmi.AccessException;
@@ -136,7 +135,7 @@ public class Maze_game_client {
         if (args.length > 0) {
             if (args[0].equals("-S")) {
                 try {
-                    Server_interface server_stub = client.client_obj.createServer(10, 10);
+                    Server_interface server_stub = client.client_obj.createServer(Integer.parseInt(args[1]) , Integer.parseInt(args[2]));
                     Registry registry = LocateRegistry.getRegistry();
                     try {
                         registry.unbind("game_control");
